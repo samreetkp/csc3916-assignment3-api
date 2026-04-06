@@ -107,76 +107,104 @@ router.route('/movies')
     }
 });
 
-router.route('/movies/:title')
+router.route('/movies/:id')
 
-.get(authJwtController.isAuthenticated, async (req,res)=>{
-    try{
-        const movie = await Movie.findOne({title:req.params.title});
+.get(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+        const movieId = req.params.id;
 
-        if(!movie){
-            return res.status(404).json({
-                success:false,
-                message:"Movie not found"
-            });
+        if (req.query.reviews === 'true') {
+            const result = await Movie.aggregate([
+                { $match: { _id: new mongoose.Types.ObjectId(movieId) } },
+                {
+                    $lookup: {
+                        from: 'reviews',
+                        localField: '_id',
+                        foreignField: 'movieId',
+                        as: 'reviews'
+                    }
+                }
+            ]);
+
+            if (!result || result.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Movie not found"
+                });
+            }
+
+            return res.json(result[0]);
+        } else {
+            const movie = await Movie.findById(movieId);
+
+            if (!movie) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Movie not found"
+                });
+            }
+
+            return res.json(movie);
         }
-
-        res.json(movie);
-    }
-    catch(err){
-        res.status(500).json({success:false, message:"Error retrieving movie"});
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Error retrieving movie",
+            error: err.message
+        });
     }
 })
 
-.put(authJwtController.isAuthenticated, async (req,res)=>{
-    try{
-
-        const movie = await Movie.findOneAndUpdate(
-            {title:req.params.title},
+.put(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+        const movie = await Movie.findByIdAndUpdate(
+            req.params.id,
             req.body,
-            {new:true}
+            { new: true }
         );
 
-        if(!movie){
+        if (!movie) {
             return res.status(404).json({
-                success:false,
-                message:"Movie not found"
+                success: false,
+                message: "Movie not found"
             });
         }
 
         res.json({
-            success:true,
-            message:"Movie updated",
+            success: true,
+            message: "Movie updated",
             movie
         });
-
-    }
-    catch(err){
-        res.status(500).json({success:false,message:"Update failed"});
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Update failed",
+            error: err.message
+        });
     }
 })
 
-.delete(authJwtController.isAuthenticated, async (req,res)=>{
-    try{
+.delete(authJwtController.isAuthenticated, async (req, res) => {
+    try {
+        const movie = await Movie.findByIdAndDelete(req.params.id);
 
-        const movie = await Movie.findOneAndDelete({
-            title:req.params.title
-        });
-
-        if(!movie){
+        if (!movie) {
             return res.status(404).json({
-                success:false,
-                message:"Movie not found"
+                success: false,
+                message: "Movie not found"
             });
         }
 
         res.json({
-            success:true,
-            message:"Movie deleted"
+            success: true,
+            message: "Movie deleted"
         });
-
-    }
-    catch(err){
-        res.status(500).json({success:false,message:"Delete failed"});
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Delete failed",
+            error: err.message
+        });
     }
 });
 
