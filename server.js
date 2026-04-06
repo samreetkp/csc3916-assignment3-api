@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const User = require('./Users');
 const Movie = require('./Movies');
+const Review = require('./models/Review');
 
 const app = express();
 
@@ -177,6 +178,34 @@ router.route('/movies/:title')
     catch(err){
         res.status(500).json({success:false,message:"Delete failed"});
     }
+});
+
+router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+  try {
+    const { movieId, username, review, rating } = req.body;
+
+    const newReview = new Review({
+      movieId,
+      username,
+      review,
+      rating
+    });
+
+    await newReview.save();
+
+    res.json({ message: 'Review created!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/reviews/:movieId', async (req, res) => {
+  try {
+    const reviews = await Review.find({ movieId: req.params.movieId });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.use('/', router);
