@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const crypto = require("crypto");
+const rp = require('request-promise');
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -227,7 +229,23 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
 
     await newReview.save();
 
+    // Get movie details (needed for analytics)
+    const movie = await Movie.findById(movieId);
+
+    if (movie) {
+      // Send analytics event
+      trackDimension(
+        movie.genre || 'Unknown',          // category (Genre)
+        'post /reviews',                   // action
+        'API Request for Movie Review',    // label
+        '1',                               // value
+        movie.title,                       // dimension (Movie Name)
+        '1'                                // metric
+      ).catch(err => console.log("GA Error:", err.message));
+    }
+
     res.json({ message: 'Review created!' });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -248,5 +266,29 @@ const PORT = process.env.PORT || 8080; // Define PORT before using it
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+const GA_TRACKING_ID = process.env.GA_KEY;
+
+function trackDimension(category, action, label, value, dimension, metric) {
+    var options = {
+        method: 'GET',
+        url: 'https://www.google-analytics.com/collect',
+        qs: {
+            v: '1',
+            tid: GA_TRACKING_ID,
+            cid: crypto.randomBytes(16).toString("hex"),
+            t: 'event',
+            ec: category,
+            ea: action,
+            el: label,
+            ev: value,
+            cd1: dimension,
+            cm1: metric
+        },
+        headers: { 'Cache-Control': 'no-cache' }
+    };
+
+    return rp(options);
+}
 
 module.exports = app; // for testing only
