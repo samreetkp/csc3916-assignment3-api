@@ -112,6 +112,12 @@ router.route('/movies/:id')
 .get(authJwtController.isAuthenticated, async (req, res) => {
     try {
         const movieId = req.params.id;
+        if (!mongoose.Types.ObjectId.isValid(movieId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid movie ID"
+            });
+        }
 
         if (req.query.reviews === 'true') {
             const result = await Movie.aggregate([
