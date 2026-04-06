@@ -1,4 +1,27 @@
-# Assignment 3 – Movie API
+# Assignment 4 – Movie API
+
+## Overview
+This project extends the Movies API by adding a **Reviews collection** and **aggregation** to return movies with their reviews. It also includes **Google Analytics tracking (extra credit)**.
+---
+
+## Features
+- JWT Authentication
+- Create & manage movies
+- Add reviews to movies
+- Get movie + reviews (`?reviews=true`)
+- MongoDB aggregation using `$lookup`
+- Postman testing
+- Google Analytics tracking (extra credit)
+
+---
+## Postman Tests
+Includes:
+- Invalid movie request
+- Valid movie with reviews
+- Valid review creation
+- Invalid review creation
+
+---
 
 ## API URL
 [https://your-backend-render-url](https://csc3916-assignment3-api.onrender.com)
