@@ -194,6 +194,56 @@ router.route('/movies')
     }
   });
 
+// EXTRA CREDIT: SEARCH MOVIES
+router.post('/movies/search', authJwtController.isAuthenticated, async (req, res) => {
+  try {
+    const { search } = req.body;
+
+    if (!search || search.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Search term is required'
+      });
+    }
+
+    const aggregate = [
+      {
+        $match: {
+          $or: [
+            { title: { $regex: search, $options: 'i' } },
+            { 'actors.actorName': { $regex: search, $options: 'i' } }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'movieId',
+          as: 'movieReviews'
+        }
+      },
+      {
+        $addFields: {
+          avgRating: { $avg: '$movieReviews.rating' }
+        }
+      },
+      {
+        $sort: { avgRating: -1 }
+      }
+    ];
+
+    const movies = await Movie.aggregate(aggregate);
+    res.json(movies);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Search failed',
+      error: err.message
+    });
+  }
+});
+
 // MOVIE DETAIL
 router.route('/movies/:id')
 
@@ -346,16 +396,14 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
 
     await newReview.save();
 
-    if (movie) {
-      trackDimension(
-        movie.genre || 'Unknown',
-        'post /reviews',
-        'API Request for Movie Review',
-        '1',
-        movie.title,
-        '1'
-      ).catch(err => console.log('GA Error:', err.message));
-    }
+    trackDimension(
+      movie.genre || 'Unknown',
+      'post /reviews',
+      'API Request for Movie Review',
+      '1',
+      movie.title,
+      '1'
+    ).catch(err => console.log('GA Error:', err.message));
 
     res.json({ message: 'Review created!' });
   } catch (err) {
