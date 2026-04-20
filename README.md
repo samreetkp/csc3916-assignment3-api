@@ -52,7 +52,7 @@ Example:
 {
   "search": "leo"
 }
-
+---
 ## API URL
 https://csc3916-assignment3-api.onrender.com
 
