@@ -46,12 +46,7 @@ It builds on Assignment 4 by adding a **React frontend** and integrating it with
 
 ### Search (Extra Credit)
 - `POST /movies/search`
-
-Example:
-```json
-{
-  "search": "leo"
-}
+  
 ---
 ## API URL
 https://csc3916-assignment3-api.onrender.com
